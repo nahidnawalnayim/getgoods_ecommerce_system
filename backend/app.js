@@ -6,7 +6,10 @@ const fileUpload = require("express-fileupload");
 const bodyParser = require("body-parser");
 const path = require("path");
 const amqp = require('amqplib/callback_api');
-
+const { createClient } =require('redis') ;
+const pubClient = createClient({ url: 'redis://redis:6379' });
+const { getCache, setCache } = require('./caching');
+const axios = require('axios');
 amqp.connect('amqps://pniiepyn:lewIs5a9P6_fgk4xhpmFTsyKM87OL7un@shrimp.rmq.cloudamqp.com/pniiepyn',(error0,connection)=>{
     if(error0) {
         throw error0
@@ -27,7 +30,7 @@ amqp.connect('amqps://pniiepyn:lewIs5a9P6_fgk4xhpmFTsyKM87OL7un@shrimp.rmq.cloud
         app.use(bodyParser.urlencoded({extended:true,limit:"50mb"}));
         app.use(express.urlencoded({ limit: "50mb", extended: true }));
         app.use(fileUpload({useTempFiles: true}));
-        
+        const cacheKey = `getAll/`;
         // config
         if(process.env.NODE_ENV!=="PRODUCTION"){
             require("dotenv").config({
@@ -61,8 +64,30 @@ res.send("hello 1")
         
         app.use(express.static(path.join(__dirname,"../frontend/build")));
         
-        app.get("*",(req,res) =>{
-            res.sendFile(path.resolve(__dirname,"../frontend/build/index.html"));
+        // app.get("*",(req,res) =>{
+        //     res.sendFile(path.resolve(__dirname,"../frontend/build/index.html"));
+        // })
+
+
+        app.get('/getAll', async (req, res, next) => {
+            try{
+                const response = {};
+                const cacheData = await getCache(cacheKey);
+                if(cacheData) {
+                    response['message'] = 'cache hit';
+                    response['posts'] = JSON.parse(cacheData);
+                }else {
+                    const result = await axios.get("https://nahidnawal.netlify.app");
+                    const { data } = result;
+                    response['message'] = 'cache miss';
+                    response['posts'] = data;
+                    setCache(cacheKey, data);
+                }
+                res.status(200).send(response);
+            }catch(err) {
+                res.status(400).send(err);
+            }
+           
         })
         
         // it's for errorHandeling

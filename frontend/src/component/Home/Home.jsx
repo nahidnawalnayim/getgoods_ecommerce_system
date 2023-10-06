@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import "./Home.css";
 import Carousel from "react-material-ui-carousel";
 import bg from "../../Assets/garrhet-sampson-CmF_5GYc6c0-unsplash.jpg";
-import bg2 from "../../Assets/background2.jpg";
+import bg2 from "../../Assets/ipad.jpg";
 import ProductCard from "../Products/ProductCard";
 import  {useDispatch, useSelector} from "react-redux"
 import { clearErrors, getProduct } from "../../actions/ProductActions";
